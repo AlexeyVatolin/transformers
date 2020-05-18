@@ -3,6 +3,7 @@ import os
 import pickle
 import time
 from multiprocessing import Pool, cpu_count
+from functools import partial
 from tqdm import tqdm
 
 import h5py
@@ -104,13 +105,30 @@ class LineByLineTextDataset(Dataset):
         return torch.tensor(self.examples[i], dtype=torch.long)
 
 
+def prepare_line(text, tokenizer, block_size):
+    examples = []
+
+    tokenized_text = tokenizer.convert_tokens_to_ids(tokenizer.tokenize(text))
+
+    for i in range(0, len(tokenized_text) - block_size + 1, block_size):  # Truncate in block of block_size
+        examples.append(
+            tokenizer.build_inputs_with_special_tokens(tokenized_text[i: i + block_size])
+        )
+    if len(tokenized_text) < block_size:
+        examples.append(
+            tokenizer.build_inputs_with_special_tokens(tokenized_text)
+            + [tokenizer.pad_token_id] * (block_size - len(tokenized_text))
+        )
+    # semaphore.acquire()
+    return examples
+
+
 class ParallelTextDataset(Dataset):
     def __init__(
             self, tokenizer: PreTrainedTokenizer, file_path: str, block_size: int, overwrite_cache=False,
     ):
         assert os.path.isfile(file_path)
 
-        self.tokenizer = tokenizer
         directory, filename = os.path.split(file_path)
         cached_features_file = os.path.join(
             directory, "cached_lm_{}_{}_{}".format(tokenizer.__class__.__name__, str(block_size), filename, ),
@@ -135,12 +153,12 @@ class ParallelTextDataset(Dataset):
 
                 insert_index = 0
                 n_jobs = cpu_count()
-                self.cache_file = h5py.File(cached_features_file, 'r')
+                self.cache_file = h5py.File(cached_features_file, 'w')
                 self.examples = self.cache_file.create_dataset('data', (100, block_size), maxshape=(None, block_size + 2), dtype='i')
                 with Pool(n_jobs) as pool, open(file_path) as f:
-                    self.block_size = block_size - tokenizer.num_special_tokens_to_add(pair=False)
-
-                    for examples in tqdm(pool.imap_unordered(self.__prepare_line, f, chunksize=n_jobs)):
+                    block_size = block_size - tokenizer.num_special_tokens_to_add(pair=False)
+                    prepare_line_partial = partial(prepare_line, tokenizer=tokenizer, block_size=block_size)
+                    for examples in tqdm(pool.imap_unordered(prepare_line_partial, f, chunksize=n_jobs)):
                         for example in examples:
                             self.__maybe_resize(insert_index, 100)
                             self.examples[insert_index] = example
@@ -156,22 +174,7 @@ class ParallelTextDataset(Dataset):
     def __getitem__(self, i) -> torch.Tensor:
         return torch.tensor(self.examples[i], dtype=torch.long)
 
-    def __prepare_line(self, text):
-        examples = []
 
-        tokenized_text = self.tokenizer.convert_tokens_to_ids(self.tokenizer.tokenize(text))
-
-        for i in range(0, len(tokenized_text) - self.block_size + 1, self.block_size):  # Truncate in block of block_size
-            examples.append(
-                self.tokenizer.build_inputs_with_special_tokens(tokenized_text[i: i + self.block_size])
-            )
-        if len(tokenized_text) < self.block_size:
-            examples.append(
-                self.tokenizer.build_inputs_with_special_tokens(tokenized_text)
-                + [self.tokenizer.pad_token_id] * (self.block_size - len(tokenized_text))
-            )
-        # semaphore.acquire()
-        return examples
 
     def __maybe_resize(self, index: int, resize_chunk: int):
         if index >= self.examples.shape[0]:
