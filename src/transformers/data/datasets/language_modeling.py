@@ -155,18 +155,17 @@ class ParallelTextDataset(Dataset):
 
                 insert_index = 0
                 n_jobs = cpu_count()
-                with h5py.File(cached_features_file, 'w') as cache_file:
-                    examples = self.cache_file.create_dataset('data', (100, block_size), maxshape=(None, block_size + 2), dtype='i')
-                    with Pool(n_jobs) as pool, open(file_path) as f:
-                        block_size = block_size - tokenizer.num_special_tokens_to_add(pair=False)
-                        prepare_line_partial = partial(prepare_line, tokenizer=tokenizer, block_size=block_size)
-                        for examples in tqdm(pool.imap_unordered(prepare_line_partial, f, chunksize=1)):
-                            for example in examples:
-                                self.__maybe_resize(examples, insert_index, 100)
-                                examples[insert_index] = example
-                                insert_index += 1
                 self.cache_file = h5py.File(cached_features_file, 'w')
-                self.examples = self.cache_file['data']
+                self.examples = self.cache_file.create_dataset('data', (100, block_size), maxshape=(None, block_size + 2), dtype='i')
+                # with Pool(n_jobs) as pool, open(file_path) as f:
+                with open(file_path) as f:
+                    block_size = block_size - tokenizer.num_special_tokens_to_add(pair=False)
+                    # prepare_line_partial = partial(prepare_line, tokenizer=tokenizer, block_size=block_size)
+                    for line in tqdm(f):
+                        for example in prepare_line(line, tokenizer, block_size):
+                            self.__maybe_resize(self.examples, insert_index, 100)
+                            self.examples[insert_index] = example
+                            insert_index += 1
                 logger.info(
                     "Saving features into cached file %s [took %.3f s]", cached_features_file, time.time() - start
                 )
