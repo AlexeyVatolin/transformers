@@ -189,7 +189,7 @@ def main():
     if model_args.tokenizer_name:
         tokenizer = AutoTokenizer.from_pretrained(model_args.tokenizer_name, cache_dir=model_args.cache_dir)
     elif model_args.model_name_or_path:
-        if 'bpe' in model_args.model_name_or_path:
+        if model_args.model_name_or_path == 'ruberta_base':
             tokenizer = RobertaTokenizerYttm(model_args.model_name_or_path)
         else:
             tokenizer = AutoTokenizer.from_pretrained(model_args.model_name_or_path, cache_dir=model_args.cache_dir)
