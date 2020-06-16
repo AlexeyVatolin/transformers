@@ -131,6 +131,7 @@ from .tokenization_longformer import LongformerTokenizer, LongformerTokenizerFas
 from .tokenization_openai import OpenAIGPTTokenizer, OpenAIGPTTokenizerFast
 from .tokenization_reformer import ReformerTokenizer
 from .tokenization_roberta import RobertaTokenizer, RobertaTokenizerFast
+from .tokenization_robera_yttm import RobertaTokenizerYttm
 from .tokenization_t5 import T5Tokenizer
 from .tokenization_transfo_xl import TransfoXLCorpus, TransfoXLTokenizer, TransfoXLTokenizerFast
 from .tokenization_utils import PreTrainedTokenizer

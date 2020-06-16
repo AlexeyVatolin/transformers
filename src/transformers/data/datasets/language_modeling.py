@@ -2,6 +2,7 @@ import logging
 import os
 import pickle
 import time
+from concurrent.futures.process import ProcessPoolExecutor
 from multiprocessing import Pool, cpu_count
 from functools import partial
 from tqdm import tqdm
@@ -123,6 +124,13 @@ def prepare_line(text, tokenizer, block_size):
     return examples
 
 
+def maybe_resize(examples: h5py.Dataset, index: int, resize_chunk: int):
+    if index >= examples.shape[0]:
+        current_shape = list(examples.shape)
+        current_shape[0] += resize_chunk
+        examples.resize(current_shape)
+
+
 class ParallelTextDataset(Dataset):
     def __init__(
             self, tokenizer: PreTrainedTokenizer, file_path: str, block_size: int, overwrite_cache=False,
@@ -155,17 +163,17 @@ class ParallelTextDataset(Dataset):
 
                 insert_index = 0
                 n_jobs = cpu_count()
-                self.cache_file = h5py.File(cached_features_file, 'w')
-                self.examples = self.cache_file.create_dataset('data', (100, block_size), maxshape=(None, block_size + 2), dtype='i')
-                # with Pool(n_jobs) as pool, open(file_path) as f:
-                with open(file_path) as f:
+                with h5py.File(cached_features_file, 'w') as cache_file, ProcessPoolExecutor(n_jobs) as pool, open(file_path) as f:
+                    data_examples = cache_file.create_dataset('data', (100, block_size), maxshape=(None, block_size), dtype='i')
                     block_size = block_size - tokenizer.num_special_tokens_to_add(pair=False)
-                    # prepare_line_partial = partial(prepare_line, tokenizer=tokenizer, block_size=block_size)
-                    for line in tqdm(f):
-                        for example in prepare_line(line, tokenizer, block_size):
-                            self.__maybe_resize(self.examples, insert_index, 100)
-                            self.examples[insert_index] = example
+                    prepare_line_partial = partial(prepare_line, tokenizer=tokenizer, block_size=block_size)
+                    for examples in tqdm(pool.map(prepare_line_partial, f, chunksize=n_jobs)):
+                        for example in examples:
+                            maybe_resize(data_examples, insert_index, 100)
+                            data_examples[insert_index] = example
                             insert_index += 1
+                self.cache_file = h5py.File(cached_features_file, 'w')
+                self.examples = self.cache_file['data']
                 logger.info(
                     "Saving features into cached file %s [took %.3f s]", cached_features_file, time.time() - start
                 )
@@ -176,8 +184,4 @@ class ParallelTextDataset(Dataset):
     def __getitem__(self, i) -> torch.Tensor:
         return torch.tensor(self.examples[i], dtype=torch.long)
 
-    def __maybe_resize(self, examples: h5py.Dataset, index: int, resize_chunk: int):
-        if index >= examples.shape[0]:
-            current_shape = list(examples.shape)
-            current_shape[0] += resize_chunk
-            examples.resize(current_shape)
+
