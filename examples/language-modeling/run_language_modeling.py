@@ -18,8 +18,7 @@ Fine-tuning the library models for language modeling on a text file (GPT, GPT-2,
 GPT and GPT-2 are fine-tuned using a causal language modeling (CLM) loss while BERT and RoBERTa are fine-tuned
 using a masked language modeling (MLM) loss.
 """
-
-
+import glob
 import logging
 import math
 import os
@@ -190,7 +189,7 @@ def main():
         tokenizer = AutoTokenizer.from_pretrained(model_args.tokenizer_name, cache_dir=model_args.cache_dir)
     elif model_args.model_name_or_path:
         if model_args.model_name_or_path == 'ruberta_base':
-            tokenizer = RobertaTokenizerYttm(model_args.model_name_or_path)
+            tokenizer = RobertaTokenizerYttm(glob.glob(os.path.normpath(model_args.model_name_or_path) + '/*.bpe')[0])
         else:
             tokenizer = AutoTokenizer.from_pretrained(model_args.model_name_or_path, cache_dir=model_args.cache_dir)
     else:
