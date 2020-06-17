@@ -32,6 +32,12 @@ class RobertaTokenizerYttm(PreTrainedTokenizer):
         return self.bpe.encode([text], output_type=yttm.OutputType.SUBWORD)[0]
 
     def convert_tokens_to_ids(self, tokens):
+        if tokens is None:
+            return None
+
+        if isinstance(tokens, str):
+            return self.bpe.vocab_size() if tokens == self.mask_token else self.bpe.subword_to_id(tokens)
+
         return [self.bpe.vocab_size() if x == self.mask_token else self.bpe.subword_to_id(x) for x in tokens]
 
     def get_special_tokens_mask(self, token_ids_0: List, token_ids_1: Optional[List] = None,
