@@ -12,6 +12,7 @@ class RobertaTokenizerYttm(PreTrainedTokenizer):
                unk_token="<UNK>",
                pad_token="<PAD>",
                ):
+        super(PreTrainedTokenizer, self).__init__()
         self.bpe = yttm.BPE(model=model_path)
         self.bos_token = bos_token
         self.eos_token = eos_token
