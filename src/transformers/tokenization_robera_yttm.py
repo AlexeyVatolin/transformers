@@ -1,18 +1,20 @@
 from typing import List, Optional, Tuple
 
+from .tokenization_roberta import RobertaTokenizer
+from .tokenization_utils_base import PreTrainedTokenizerBase
+
 from .tokenization_utils_base import TextInput
-from .tokenization_utils import PreTrainedTokenizer
 import youtokentome as yttm
 
 
-class RobertaTokenizerYttm(PreTrainedTokenizer):
+class RobertaTokenizerYttm(RobertaTokenizer):
     def __init__(self, model_path,
                bos_token="<BOS>",
                eos_token="<EOS>",
                unk_token="<UNK>",
                pad_token="<PAD>",
                ):
-        super(PreTrainedTokenizer, self).__init__()
+        super(PreTrainedTokenizerBase, self).__init__()
         self.bpe = yttm.BPE(model=model_path)
         self.bos_token = bos_token
         self.eos_token = eos_token
@@ -73,5 +75,10 @@ class RobertaTokenizerYttm(PreTrainedTokenizer):
     @property
     def mask_token_id(self):
         return self.bpe.subword_to_id(self.eos_token)
+
+    @property
+    def vocab_size(self):
+        return self.bpe.vocab_size() + 1
+
 
 
