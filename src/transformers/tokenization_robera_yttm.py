@@ -19,6 +19,8 @@ class RobertaTokenizerYttm(RobertaTokenizer):
         self.bos_token = bos_token
         self.eos_token = eos_token
         self._pad_token = pad_token
+        self._cls_token = bos_token
+        self._sep_token = eos_token
         self.mask_token = '<mask>'
 
     def __len__(self):
