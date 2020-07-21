@@ -40,7 +40,9 @@ from transformers import (
     TrainingArguments,
     set_seed, RobertaTokenizerYttm,
 )
+from transformers.data.datasets.language_modeling import LineByLineCacheTextDataset
 
+from data.datasets import ParallelTextDataset
 
 logger = logging.getLogger(__name__)
 
@@ -121,7 +123,7 @@ class DataTrainingArguments:
 def get_dataset(args: DataTrainingArguments, tokenizer: PreTrainedTokenizer, evaluate=False):
     file_path = args.eval_data_file if evaluate else args.train_data_file
     if args.line_by_line:
-        return LineByLineTextDataset(tokenizer=tokenizer, file_path=file_path, block_size=args.block_size)
+        return LineByLineCacheTextDataset(tokenizer=tokenizer, file_path=file_path, block_size=args.block_size)
     elif args.parallel_dataset:
         return ParallelTextDataset(tokenizer=tokenizer, file_path=file_path, block_size=args.block_size)
     else:
