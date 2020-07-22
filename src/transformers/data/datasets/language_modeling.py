@@ -203,12 +203,13 @@ class LineByLineCacheTextDataset(Dataset):
             directory, "cached_lm_{}_{}_{}.hdf5".format(tokenizer.__class__.__name__, str(block_size), filename, ),
         )
 
-        with open(file_path, encoding="utf-8") as f:
-            lines = [line for line in f.read().splitlines() if (len(line) > 0 and not line.isspace())]
-        with h5py.File(cached_features_file, 'w') as f:
-            for i, line in enumerate(lines):
-                batch_encoding = tokenizer(line, add_special_tokens=True, truncation=True, max_length=block_size)
-                f[str(i)] = batch_encoding["input_ids"]
+        if not os.path.exists(cached_features_file):
+            with open(file_path, encoding="utf-8") as f:
+                lines = [line for line in f.read().splitlines() if (len(line) > 0 and not line.isspace())]
+            with h5py.File(cached_features_file, 'w') as f:
+                for i, line in enumerate(lines):
+                    batch_encoding = tokenizer(line, add_special_tokens=True, truncation=True, max_length=block_size)
+                    f[str(i)] = batch_encoding["input_ids"]
         self.examples = h5py.File(cached_features_file, 'r')
 
     def __len__(self):
