@@ -18,6 +18,8 @@
 import logging
 from collections import OrderedDict
 
+from .configuration_sandwich import SandwichConfig
+
 from .configuration_albert import ALBERT_PRETRAINED_CONFIG_ARCHIVE_MAP, AlbertConfig
 from .configuration_bart import BART_PRETRAINED_CONFIG_ARCHIVE_MAP, BartConfig
 from .configuration_bert import BERT_PRETRAINED_CONFIG_ARCHIVE_MAP, BertConfig
@@ -91,6 +93,7 @@ CONFIG_MAPPING = OrderedDict(
         ("ctrl", CTRLConfig,),
         ("electra", ElectraConfig,),
         ("encoder-decoder", EncoderDecoderConfig,),
+        ("sandwich", SandwichConfig,),
     ]
 )
 

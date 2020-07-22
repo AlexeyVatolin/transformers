@@ -19,6 +19,9 @@ import logging
 import warnings
 from collections import OrderedDict
 
+from .configuration_sandwich import SandwichConfig
+from .modeling_sandwich import SandwichForMaskedLM
+
 from .configuration_auto import (
     AlbertConfig,
     AutoConfig,
@@ -247,6 +250,7 @@ MODEL_FOR_MASKED_LM_MAPPING = OrderedDict(
         (FlaubertConfig, FlaubertWithLMHeadModel),
         (XLMConfig, XLMWithLMHeadModel),
         (ElectraConfig, ElectraForMaskedLM),
+        (SandwichConfig, SandwichForMaskedLM),
     ]
 )
 
