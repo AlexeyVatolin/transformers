@@ -40,9 +40,7 @@ from transformers import (
     TrainingArguments,
     set_seed, RobertaTokenizerYttm,
 )
-from transformers.data.datasets.language_modeling import LineByLineCacheTextDataset
-
-from data.datasets import ParallelTextDataset
+from transformers.data.datasets.language_modeling import LineByLineCacheTextDataset, ParallelTextDataset
 
 logger = logging.getLogger(__name__)
 
